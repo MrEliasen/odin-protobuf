@@ -52,9 +52,6 @@ decode_tag :: proc(buffer: []u8, index: ^int) -> (tag: Tag, ok: bool) {
 @(private = "file")
 decode_value :: proc(buffer: []u8, type: Type, index: ^int) -> (value: Value, ok: bool) {
 	switch type {
-		case .None:
-			fmt.eprintf("can't decode value when no type is provided\n")
-			return value, false
 		case .VARINT:
 			value = decode_varint(buffer, index) or_return
 			ok = true
