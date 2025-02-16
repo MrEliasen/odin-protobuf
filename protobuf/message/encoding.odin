@@ -6,30 +6,58 @@ import "../wire"
 import "base:runtime"
 
 encode :: proc(message: any) -> (buffer: []u8, ok: bool) {
-	wire_message: wire.Message = {
-		fields = make_map(map[u32]wire.Field, allocator = context.temp_allocator),
-	}
+    wire_message: wire.Message = {
+        fields = make_map(map[u32]wire.Field, allocator = context.temp_allocator),
+    }
 
-	field_count := struct_field_count(message) or_return
+    field_count := struct_field_count(message) or_return
+    empty_fields := [dynamic]int{}
 
-	for field_idx in 0 ..< field_count {
-		field_info := struct_field_info(message, field_idx) or_return
+    for field_idx in 0 ..< field_count {
+        field_info := struct_field_info(message, field_idx) or_return
+        wire_field: wire.Field
 
-		wire_field: wire.Field
+        switch _ in field_info.type {
+        case Field_Type_Scalar:
+            wire_field = encode_field_scalar(field_info) or_return
+        case Field_Type_Repeated:
+            wire_field = encode_field_repeated(field_info) or_return
+        case Field_Type_Map:
+            wire_field = encode_field_map(field_info) or_return
+        }
 
-		switch _ in field_info.type {
-			case Field_Type_Scalar:
-				wire_field = encode_field_scalar(field_info) or_return
-			case Field_Type_Repeated:
-				wire_field = encode_field_repeated(field_info) or_return
-			case Field_Type_Map:
-				wire_field = encode_field_map(field_info) or_return
-		}
+        if check_is_empty(wire_field) {
+            append(&empty_fields, field_idx)
+            continue
+        }
 
-		wire_message.fields[wire_field.tag.field_number] = wire_field
-	}
+        wire_message.fields[wire_field.tag.field_number] = wire_field
+    }
 
-	return wire.encode(wire_message)
+    for idx, _ in empty_fields {
+        delete_key(&wire_message.fields, u32(idx))
+    }
+
+    return wire.encode(wire_message)
+}
+
+@(private = "file")
+check_is_empty :: proc(f: wire.Field) -> bool {
+    fmt.println(f)
+
+    // groups not supported, they are depreciated
+    #partial switch f.tag.type {
+    case wire.Type.I64:
+        return f.values[0].(wire.Value_I64) == 0
+    case wire.Type.LEN:
+        return len(f.values[0].(wire.Value_LEN)) == 0
+    case wire.Type.I32:
+        return f.values[0].(wire.Value_I32) == 0
+    case wire.Type.VARINT:
+        return f.values[0].(wire.Value_VARINT) == 0
+    }
+
+    return false
 }
 
 @(private = "file")

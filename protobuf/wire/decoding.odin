@@ -51,28 +51,31 @@ decode_tag :: proc(buffer: []u8, index: ^int) -> (tag: Tag, ok: bool) {
 
 @(private = "file")
 decode_value :: proc(buffer: []u8, type: Type, index: ^int) -> (value: Value, ok: bool) {
-	switch type {
-		case .VARINT:
-			value = decode_varint(buffer, index) or_return
-			ok = true
-		case .I32:
-			value = decode_fixed(Value_I32, buffer, index) or_return
-			ok = true
-		case .I64:
-			value = decode_fixed(Value_I64, buffer, index) or_return
-			ok = true
-		case .LEN:
-			len_varint := decode_varint(buffer, index) or_return
-			len := int(len_varint)
-			value = make(Value_LEN, len)
-			copy(([]u8)(value.(Value_LEN)), buffer[index^:index^ + len])
-			index^ += len
-			ok = true
-		case .SGROUP, .EGROUP:
-			fmt.eprintf("%v field type is deprecated\n", type)
-	}
+    switch type {
+    case .VARINT:
+        value = decode_varint(buffer, index) or_return
+        ok = true
+    case .I32:
+        value = decode_fixed(Value_I32, buffer, index) or_return
+        ok = true
+    case .I64:
+        value = decode_fixed(Value_I64, buffer, index) or_return
+        ok = true
+    case .LEN:
+        len_varint := decode_varint(buffer, index) or_return
+        len := int(len_varint)
+        value = make(Value_LEN, len)
+        copy(([]u8)(value.(Value_LEN)), buffer[index^:index^ + len])
+        index^ += len
+        ok = true
+    case .SGROUP, .EGROUP:
+        fmt.eprintf("%v field type is deprecated\n", type)
+    case:
+        fmt.eprintf("can't decode value with unknown type %d\n", type)
+        return value, false
+    }
 
-	return value, ok
+    return value, ok
 }
 
 decode_packed :: proc(value: Value_LEN, elem_type: Type) -> (result: []Value, ok: bool) {
