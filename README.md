@@ -1,6 +1,14 @@
 # odin-protobuf
 [Protobuf](https://github.com/protocolbuffers/protobuf) support for Odin. To generate Odin files from proto definitions, use the [odin-protoc-plugin](https://github.com/lordhippo/odin-protoc-plugin).
 
+## Fork Changes
+
+- Make compatible with Odin dev-02-2025
+- Fix Protobuf wire types
+- Fix typed result when decoding
+- Add wire message compacting
+- Formatted files with ols
+
 ## Usage
 Example usage of the library can be found in the examples folder.
 
