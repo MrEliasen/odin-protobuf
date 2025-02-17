@@ -43,8 +43,6 @@ encode :: proc(message: any) -> (buffer: []u8, ok: bool) {
 
 @(private = "file")
 check_is_empty :: proc(f: wire.Field) -> bool {
-    fmt.println(f)
-
     // groups not supported, they are depreciated
     #partial switch f.tag.type {
     case wire.Type.I64:
