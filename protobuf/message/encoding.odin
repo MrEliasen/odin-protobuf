@@ -6,12 +6,14 @@ import "../wire"
 import "base:runtime"
 
 encode :: proc(message: any) -> (buffer: []u8, ok: bool) {
-    wire_message: wire.Message = {
-        fields = make_map(map[u32]wire.Field, allocator = context.temp_allocator),
-    }
+	wire_message: wire.Message = {
+		fields = make_map(map[u32]wire.Field, allocator = context.temp_allocator),
+	}
 
     field_count := struct_field_count(message) or_return
-    empty_fields := [dynamic]int{}
+
+    field_count := struct_field_count(message) or_return
+    empty_fields := [dynamic]u32{}
 
     for field_idx in 0 ..< field_count {
         field_info := struct_field_info(message, field_idx) or_return
@@ -27,15 +29,11 @@ encode :: proc(message: any) -> (buffer: []u8, ok: bool) {
         }
 
         if check_is_empty(wire_field) {
-            append(&empty_fields, field_idx)
+            delete_key(&wire_message.fields, wire_field.tag.field_number)
             continue
         }
 
         wire_message.fields[wire_field.tag.field_number] = wire_field
-    }
-
-    for idx, _ in empty_fields {
-        delete_key(&wire_message.fields, u32(idx))
     }
 
     return wire.encode(wire_message)
