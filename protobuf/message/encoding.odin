@@ -13,7 +13,6 @@ encode :: proc(message: any) -> (buffer: []u8, ok: bool) {
     field_count := struct_field_count(message) or_return
 
     field_count := struct_field_count(message) or_return
-    empty_fields := [dynamic]u32{}
 
     for field_idx in 0 ..< field_count {
         field_info := struct_field_info(message, field_idx) or_return
@@ -38,10 +37,9 @@ encode :: proc(message: any) -> (buffer: []u8, ok: bool) {
 
     return wire.encode(wire_message)
 }
-
 @(private = "file")
 check_is_empty :: proc(f: wire.Field) -> bool {
-    // groups not supported, they are depreciated
+    // groups not supported
     #partial switch f.tag.type {
     case wire.Type.I64:
         return f.values[0].(wire.Value_I64) == 0
@@ -53,7 +51,7 @@ check_is_empty :: proc(f: wire.Field) -> bool {
         return f.values[0].(wire.Value_VARINT) == 0
     }
 
-    return false
+    return true
 }
 
 @(private = "file")
