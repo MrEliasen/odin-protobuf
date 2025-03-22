@@ -12,8 +12,6 @@ encode :: proc(message: any) -> (buffer: []u8, ok: bool) {
 
     field_count := struct_field_count(message) or_return
 
-    field_count := struct_field_count(message) or_return
-
     for field_idx in 0 ..< field_count {
         field_info := struct_field_info(message, field_idx) or_return
         wire_field: wire.Field
