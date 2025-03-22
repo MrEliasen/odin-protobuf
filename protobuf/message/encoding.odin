@@ -37,6 +37,10 @@ encode :: proc(message: any) -> (buffer: []u8, ok: bool) {
 }
 @(private = "file")
 check_is_empty :: proc(f: wire.Field) -> bool {
+    if len(f.values) == 0 {
+        return true
+    }
+
     // groups not supported
     #partial switch f.tag.type {
     case wire.Type.I64:
