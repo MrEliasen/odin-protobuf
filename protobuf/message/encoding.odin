@@ -15,17 +15,20 @@ encode :: proc(message: any) -> (buffer: []u8, ok: bool) {
     for field_idx in 0 ..< field_count {
         field_info := struct_field_info(message, field_idx) or_return
         wire_field: wire.Field
+        is_empty_repeated := false
 
         switch _ in field_info.type {
         case Field_Type_Scalar:
             wire_field = encode_field_scalar(field_info) or_return
         case Field_Type_Repeated:
+            type_details := field_info.type.(Field_Type_Repeated)
+            is_empty_repeated = type_details.elem_size == 0
             wire_field = encode_field_repeated(field_info) or_return
         case Field_Type_Map:
             wire_field = encode_field_map(field_info) or_return
         }
 
-        if check_is_empty(wire_field) {
+        if is_empty_repeated && check_is_empty(wire_field) {
             delete_key(&wire_message.fields, wire_field.tag.field_number)
             continue
         }
@@ -46,7 +49,13 @@ check_is_empty :: proc(f: wire.Field) -> bool {
     case wire.Type.I64:
         return f.values[0].(wire.Value_I64) == 0
     case wire.Type.LEN:
-        return len(f.values[0].(wire.Value_LEN)) == 0
+        for v in f.values {
+            if len(v.(wire.Value_LEN)) > 0 {
+                return false
+            }
+        }
+
+        return true
     case wire.Type.I32:
         return f.values[0].(wire.Value_I32) == 0
     case wire.Type.VARINT:
