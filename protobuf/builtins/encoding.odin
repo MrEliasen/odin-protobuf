@@ -32,14 +32,12 @@ encode_enum :: proc(value: Enum_Wire_Type) -> wire.Value_VARINT {
 }
 
 encode_sint32 :: proc(value: i32) -> wire.Value_VARINT {
-	value_u32 := transmute(u32)value
-	value_zigzag := (value_u32 << 1) ~ (value_u32 >> 31)
+	value_zigzag := transmute(u32)((value << 1) ~ (value >> 31))
 	return encode_uint32(value_zigzag)
 }
 
 encode_sint64 :: proc(value: i64) -> wire.Value_VARINT {
-	value_u64 := transmute(u64)value
-	value_zigzag := (value_u64 << 1) ~ (value_u64 >> 63)
+	value_zigzag := transmute(u64)((value << 1) ~ (value >> 63))
 	return encode_uint64(value_zigzag)
 }
 

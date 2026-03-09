@@ -36,13 +36,13 @@ decode_enum :: proc(value: wire.Value_VARINT) -> Enum_Wire_Type {
 }
 
 decode_sint32 :: proc(value: wire.Value_VARINT) -> i32 {
-	abs_value := i32(value >> 1)
-	return abs_value if (value & 1) == 0 else -abs_value
+	value_u32 := u32(value)
+	return transmute(i32)((value_u32 >> 1) ~ u32(-i32(value_u32 & 1)))
 }
 
 decode_sint64 :: proc(value: wire.Value_VARINT) -> i64 {
-	abs_value := i64(value >> 1)
-	return abs_value if (value & 1) == 0 else -abs_value
+	value_u64 := u64(value)
+	return transmute(i64)((value_u64 >> 1) ~ u64(-i64(value_u64 & 1)))
 }
 
 // I32-backing
