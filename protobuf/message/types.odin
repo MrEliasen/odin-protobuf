@@ -103,14 +103,22 @@ struct_field_info :: proc(
 
 	#partial switch type_variant in field_rtti.type.variant {
 		case runtime.Type_Info_Slice:
-			field_info.type = Field_Type_Repeated {
-				elem_size  = type_variant.elem.size,
-				elem_align = type_variant.elem.align,
-				elem_type  = type_variant.elem.id,
-				is_packed  = field_tag_lookup_bool(field_rtti, "packed") or_else false,
-			}
+			if field_info.proto_type == .t_bytes && type_variant.elem.id == typeid_of(u8) {
+				field_info.type = Field_Type_Scalar {
+					type = field_rtti.type.id,
+				}
 
-			field_info.data = transmute(Field_Data_Repeated)(field_ptr)
+				field_info.data = Field_Data_Scalar(field_ptr)
+			} else {
+				field_info.type = Field_Type_Repeated {
+					elem_size  = type_variant.elem.size,
+					elem_align = type_variant.elem.align,
+					elem_type  = type_variant.elem.id,
+					is_packed  = field_tag_lookup_bool(field_rtti, "packed") or_else false,
+				}
+
+				field_info.data = transmute(Field_Data_Repeated)(field_ptr)
+			}
 
 		case runtime.Type_Info_Map:
 			field_info.type = Field_Type_Map {
@@ -162,6 +170,10 @@ new_scalar :: proc(id: typeid, allocator := context.allocator) -> (any, bool) {
 	align := reflect.align_of_typeid(id)
 
 	ptr, alloc_error := runtime.mem_alloc_bytes(size, align, allocator)
+	if alloc_error == .None {
+		runtime.mem_zero(raw_data(ptr), size)
+	}
+
 	return {data = raw_data(ptr), id = id}, alloc_error == .None
 }
 
@@ -174,10 +186,16 @@ new_repeated :: proc(
 	runtime.Raw_Slice,
 	bool,
 ) {
+	size := slice_info.elem_size * count
 	ptr, alloc_error := runtime.mem_alloc_bytes(
-		slice_info.elem_size * count,
+		size,
 		slice_info.elem_align,
 		allocator,
 	)
+
+	if alloc_error == .None {
+		runtime.mem_zero(raw_data(ptr), size)
+	}
+
 	return {data = raw_data(ptr), len = count}, alloc_error == .None
 }
