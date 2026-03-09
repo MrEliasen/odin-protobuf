@@ -46,6 +46,15 @@ decode_tag :: proc(buffer: []u8, index: ^int) -> (tag: Tag, ok: bool) {
 	tag.type = Type(bits.bitfield_extract(value, 0, 3))
 	tag.field_number = u32(bits.bitfield_extract(value, 3, 29))
 
+	if tag.field_number == 0 {
+		fmt.eprintf("Failed to decode tag: field number cannot be 0\n")
+		return tag, false
+	}
+	if tag.field_number >= 19000 && tag.field_number <= 19999 {
+		fmt.eprintf("Failed to decode tag: field number %v is in reserved range\n", tag.field_number)
+		return tag, false
+	}
+
 	return tag, true
 }
 
@@ -63,10 +72,14 @@ decode_value :: proc(buffer: []u8, type: Type, index: ^int) -> (value: Value, ok
 			ok = true
 		case .LEN:
 			len_varint := decode_varint(buffer, index) or_return
-			len := int(len_varint)
-			value = make(Value_LEN, len)
-			copy(([]u8)(value.(Value_LEN)), buffer[index^:index^ + len])
-			index^ += len
+			length := int(len_varint)
+			if length < 0 || index^ + length > len(buffer) {
+				fmt.eprintf("Failed to decode LEN: out of bounds or invalid length\n")
+				return value, false
+			}
+			value = make(Value_LEN, length)
+			copy(([]u8)(value.(Value_LEN)), buffer[index^:index^ + length])
+			index^ += length
 			ok = true
 		case .SGROUP, .EGROUP:
 			fmt.eprintf("%v field type is deprecated\n", type)
