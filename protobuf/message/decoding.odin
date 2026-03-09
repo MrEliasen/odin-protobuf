@@ -4,6 +4,8 @@ import "../builtins"
 import "../wire"
 
 import "base:runtime"
+import "core:slice"
+import "core:strings"
 
 decode :: proc($T: typeid, buffer: []u8) -> (message: ^T, ok: bool) {
 	return decode_with_allocator(T, buffer, context.allocator)
@@ -59,31 +61,47 @@ decode_field_scalar :: proc(field_info: Field_Info, wire_field: wire.Field) -> b
 
 @(private = "file")
 decode_field_repeated :: proc(field_info: Field_Info, wire_field: wire.Field) -> bool {
-	values: []wire.Value
+	values: [dynamic]wire.Value
+	values.allocator = context.allocator
+	defer delete(values)
 
 	// Expand LEN-type value into an array of values
 	if is_packed(field_info) {
-		// TODO: remove this limitation if needed.
-		// though, wire-level should've already merged len-type messages
-		assert(len(wire_field.values) == 1)
-
 		wire_type := builtins.wire_type(field_info.proto_type)
-		values = wire.decode_packed(
-			wire_field.values[0].(wire.Value_LEN),
-			wire_type,
-		) or_return
+		for wire_value in wire_field.values {
+			packed_values := wire.decode_packed(
+				wire_value.(wire.Value_LEN),
+				wire_type,
+			) or_return
+			append(&values, ..packed_values)
+			delete(packed_values)
+		}
 	} else {
-		values = wire_field.values
+		append(&values, ..wire_field.values)
+	}
+
+	if len(values) == 0 {
+		return true
 	}
 
 	slice_info := field_info.type.(Field_Type_Repeated)
 
 	slice_data := field_info.data.(Field_Data_Repeated)
-	slice_data^ = new_repeated(slice_info, len(values)) or_return
+	
+	old_len := slice_data^.len
+	new_len := old_len + len(values)
+	
+	new_slice := new_repeated(slice_info, new_len) or_return
+	
+	if old_len > 0 {
+		runtime.mem_copy(new_slice.data, slice_data^.data, old_len * slice_info.elem_size)
+	}
+	
+	slice_data^ = new_slice
 
 	for value, value_idx in values {
-		offset := uintptr(value_idx * slice_info.elem_size)
-		current_ptr := rawptr(uintptr(slice_data.data) + offset)
+		offset := uintptr((old_len + value_idx) * slice_info.elem_size)
+		current_ptr := rawptr(uintptr(slice_data^.data) + offset)
 
 		decode_fill_field(
 			{data = current_ptr, id = slice_info.elem_type},
@@ -122,16 +140,19 @@ decode_field_map :: proc(field_info: Field_Info, wire_field: wire.Field) -> (ok:
 		return
 	}
 
-	tmp_key_data := new_scalar(
-		key_field_info.type.(Field_Type_Scalar).type,
-		context.temp_allocator,
-	) or_return
-	tmp_value_data := new_scalar(
-		value_field_info.type.(Field_Type_Scalar).type,
-		context.temp_allocator,
-	) or_return
-
 	for value in wire_field.values {
+		tmp_key_data := new_scalar(
+			key_field_info.type.(Field_Type_Scalar).type,
+			context.allocator,
+		) or_return
+		defer free(tmp_key_data.data, context.allocator)
+
+		tmp_value_data := new_scalar(
+			value_field_info.type.(Field_Type_Scalar).type,
+			context.allocator,
+		) or_return
+		defer free(tmp_value_data.data, context.allocator)
+
 		entry_bytes := builtins.decode_bytes(value.(wire.Value_LEN))
 		entry_message := wire.decode(entry_bytes) or_return
 
@@ -198,11 +219,21 @@ decode_fill_field :: proc(field: any, value: wire.Value, type: builtins.Type) ->
 			field_bytes := builtins.decode_bytes(value.(wire.Value_LEN))
 			decode_fill(field, field_bytes) or_return
 		case .t_string:
-			// TODO: handle concatenation
-			(transmute(^string)field.data)^ = builtins.decode_string(value.(wire.Value_LEN))
+			existing := (transmute(^string)field.data)^
+			new_str := builtins.decode_string(value.(wire.Value_LEN))
+			if len(existing) == 0 {
+				(transmute(^string)field.data)^ = new_str
+			} else {
+				(transmute(^string)field.data)^ = strings.concatenate([]string{existing, new_str}, context.allocator)
+			}
 		case .t_bytes:
-			// TODO: handle concatenation
-			(transmute(^([]u8))field.data)^ = builtins.decode_bytes(value.(wire.Value_LEN))
+			existing := (transmute(^([]u8))field.data)^
+			new_bytes := builtins.decode_bytes(value.(wire.Value_LEN))
+			if len(existing) == 0 {
+				(transmute(^([]u8))field.data)^ = new_bytes
+			} else {
+				(transmute(^([]u8))field.data)^ = slice.concatenate([][]u8{existing, new_bytes}, context.allocator)
+			}
 		case .t_group:
 			unimplemented()
 	}
