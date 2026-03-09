@@ -21,13 +21,8 @@ decode_uint64 :: proc(value: wire.Value_VARINT) -> u64 {
 }
 
 decode_bool :: proc(value: wire.Value_VARINT) -> bool {
-	// Bools are encoded as if they were int32s
-	value_i32 := decode_int32(value)
-	assert(
-		value_i32 == 0x00 || value_i32 == 0x01,
-		"Bools should always encode as either `00` or `01`",
-	)
-	return bool(value_i32)
+	// Protobuf parsers must accept any non-zero value as true
+	return value != 0
 }
 
 decode_enum :: proc(value: wire.Value_VARINT) -> Enum_Wire_Type {
