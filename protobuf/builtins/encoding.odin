@@ -5,7 +5,7 @@ import "../wire"
 // VARINT-backing
 
 encode_int32 :: proc(value: i32) -> wire.Value_VARINT {
-	// TODO: verify if 32-bits int also occupy 64 bits when negative
+	// 32-bit negative numbers gets sign-extended to 64
 	return encode_int64(i64(value))
 }
 

@@ -5,7 +5,6 @@ import "../wire"
 // VARINT-backing
 
 decode_int32 :: proc(value: wire.Value_VARINT) -> i32 {
-	// TODO: verify if 32-bits int also occupy 64 bits when negative
 	return i32(decode_int64(value))
 }
 
