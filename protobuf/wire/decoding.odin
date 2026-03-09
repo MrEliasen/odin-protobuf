@@ -88,7 +88,7 @@ decode_packed :: proc(value: Value_LEN, elem_type: Type) -> (result: []Value, ok
 	}
 
 	buffer := ([]u8)(value)
-	elems := make([dynamic]Value, context.temp_allocator)
+	elems := make([dynamic]Value, context.allocator)
 	for index := 0; index < len(value); {
 		elem := decode_value(buffer, elem_type, &index) or_return
 		append(&elems, elem)
@@ -100,7 +100,8 @@ decode_packed :: proc(value: Value_LEN, elem_type: Type) -> (result: []Value, ok
 decode :: proc(buffer: []u8) -> (message: Message, ok: bool) {
 	message.fields = make(map[u32]Field)
 
-	value_map := make_map(map[u32]([dynamic]Value), allocator = context.temp_allocator)
+	value_map := make_map(map[u32]([dynamic]Value), allocator = context.allocator)
+	defer delete(value_map)
 
 	for index := 0; index < len(buffer); {
 		tag := decode_tag(buffer, &index) or_return
@@ -109,7 +110,7 @@ decode :: proc(buffer: []u8) -> (message: Message, ok: bool) {
 		if tag.field_number not_in value_map {
 			value_map[tag.field_number] = make(
 				[dynamic]Value,
-				allocator = context.temp_allocator,
+				allocator = context.allocator,
 			)
 
 			message.fields[tag.field_number] = {

@@ -4,9 +4,14 @@ import "../builtins"
 import "../wire"
 
 import "base:runtime"
-import "core:slice"
 
 decode :: proc($T: typeid, buffer: []u8) -> (message: ^T, ok: bool) {
+	return decode_with_allocator(T, buffer, context.allocator)
+}
+
+decode_with_allocator :: proc($T: typeid, buffer: []u8, allocator: runtime.Allocator) -> (message: ^T, ok: bool) {
+	context.allocator = allocator
+
     msg, success := new_scalar(typeid_of(T))
     if !success {
         return nil, false
@@ -107,7 +112,7 @@ decode_field_map :: proc(field_info: Field_Info, wire_field: wire.Field) -> (ok:
 	}
 
 	map_data := field_info.data.(Field_Data_Map)
-	map_data.allocator = context.temp_allocator
+	map_data.allocator = context.allocator
 
 	if alloc_result := runtime.map_reserve_dynamic(
 		(^runtime.Raw_Map)(map_data),

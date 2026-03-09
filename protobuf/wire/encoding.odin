@@ -61,7 +61,7 @@ encode_value :: proc(value: Value, buffer: ^[dynamic]u8) -> bool {
 }
 
 encode_packed :: proc(values: []Value) -> (result: Value_LEN, ok: bool) {
-	buffer := make([dynamic]u8, context.temp_allocator)
+	buffer := make([dynamic]u8, context.allocator)
 
 	for value in values {
 		encode_value(value, &buffer) or_return
@@ -71,7 +71,7 @@ encode_packed :: proc(values: []Value) -> (result: Value_LEN, ok: bool) {
 }
 
 encode :: proc(message: Message) -> (buffer: []u8, ok: bool) {
-	buffer_dyn := make([dynamic]u8)
+	buffer_dyn := make([dynamic]u8, context.allocator)
 
 	for _, field in message.fields {
 		for value in field.values {

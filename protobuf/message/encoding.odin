@@ -6,8 +6,14 @@ import "../wire"
 import "base:runtime"
 
 encode :: proc(message: any) -> (buffer: []u8, ok: bool) {
+	return encode_with_allocator(message, context.allocator)
+}
+
+encode_with_allocator :: proc(message: any, allocator: runtime.Allocator) -> (buffer: []u8, ok: bool) {
+	context.allocator = allocator
+
 	wire_message: wire.Message = {
-		fields = make_map(map[u32]wire.Field, allocator = context.temp_allocator),
+		fields = make_map(map[u32]wire.Field, allocator = context.allocator),
 	}
 
     field_count := struct_field_count(message) or_return
@@ -73,7 +79,7 @@ encode_field_scalar :: proc(field_info: Field_Info) -> (field: wire.Field, ok: b
 		type         = builtins.wire_type(field_info.proto_type),
 	}
 
-	field.values = make_slice([]wire.Value, 1, context.temp_allocator)
+	field.values = make_slice([]wire.Value, 1, context.allocator)
 	field.values[0] = encode_field_value(
 		 {
 			data = rawptr(field_info.data.(Field_Data_Scalar)),
@@ -97,7 +103,7 @@ encode_field_repeated :: proc(field_info: Field_Info) -> (field: wire.Field, ok:
 	slice_data := field_info.data.(Field_Data_Repeated)
 	slice_info := field_info.type.(Field_Type_Repeated)
 
-	field.values = make_slice([]wire.Value, slice_data.len, context.temp_allocator)
+	field.values = make_slice([]wire.Value, slice_data.len, context.allocator)
 
 	for elem_idx in 0 ..< slice_data.len {
 		offset := uintptr(elem_idx * slice_info.elem_size)
@@ -111,7 +117,7 @@ encode_field_repeated :: proc(field_info: Field_Info) -> (field: wire.Field, ok:
 	// Compact values into one LEN-type value
 	if is_packed(field_info) {
 		packed_val := wire.encode_packed(field.values) or_return
-		field.values = make_slice([]wire.Value, 1, context.temp_allocator)
+		field.values = make_slice([]wire.Value, 1, context.allocator)
 		field.values[0] = packed_val
 	}
 
@@ -148,13 +154,13 @@ encode_field_map :: proc(field_info: Field_Info) -> (field: wire.Field, ok: bool
 		[dynamic]wire.Value,
 		len = 0,
 		cap = entry_count,
-		allocator = context.temp_allocator,
+		allocator = context.allocator,
 	)
 
 	entry_fields := make_map_cap(
 		map[u32]wire.Field,
 		capacity = 2,
-		allocator = context.temp_allocator,
+		allocator = context.allocator,
 	)
 
 	for entry_idx := 0; entry_idx < entry_count; entry_idx += 1 {

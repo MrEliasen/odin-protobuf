@@ -36,12 +36,26 @@ if encoded_buffer, ok := protobuf.encode(message); ok {
 } else {
 	// error
 }
+
+// NEW: Encode using a specific allocator for the resulting buffer
+if encoded_buffer, ok := protobuf.encode_with_allocator(message, context.allocator); ok {
+	// success
+} else {
+	// error
+}
 ```
 
 and decode:
 
 ```odin
 if message, ok := protobuf.decode(proto.SearchRequest, buffer); ok {
+	// success
+} else {
+	// error
+}
+
+// NEW: Decode using a specific allocator
+if message, ok := protobuf.decode_with_allocator(proto.SearchRequest, buffer, context.allocator); ok {
 	// success
 } else {
 	// error
