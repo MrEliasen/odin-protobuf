@@ -21,20 +21,17 @@ encode_with_allocator :: proc(message: any, allocator: runtime.Allocator) -> (bu
     for field_idx in 0 ..< field_count {
         field_info := struct_field_info(message, field_idx) or_return
         wire_field: wire.Field
-        is_empty_repeated := false
 
         switch _ in field_info.type {
         case Field_Type_Scalar:
             wire_field = encode_field_scalar(field_info) or_return
         case Field_Type_Repeated:
-            type_details := field_info.type.(Field_Type_Repeated)
-            is_empty_repeated = type_details.elem_size == 0
             wire_field = encode_field_repeated(field_info) or_return
         case Field_Type_Map:
             wire_field = encode_field_map(field_info) or_return
         }
 
-        if is_empty_repeated && check_is_empty(wire_field) {
+        if check_is_empty(wire_field) {
             delete_key(&wire_message.fields, wire_field.tag.field_number)
             continue
         }
