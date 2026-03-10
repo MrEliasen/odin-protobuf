@@ -9,12 +9,12 @@ import "core:testing"
 
 @(test)
 test_decode_all_types :: proc(t: ^testing.T) {
-    bytes, ok := os.read_entire_file_from_filename("payload.bin")
-    if !ok {
-        testing.fail_now(t, "failed to read payload.bin")
-    }
-    defer delete(bytes)
-    
+	file_allocator := context.allocator
+	bytes, _ := os.read_entire_file_from_path("payload.bin", file_allocator)
+	if len(bytes) == 0 {
+		testing.fail_now(t, "failed to read payload.bin")
+	}
+	defer delete(bytes, file_allocator)
     arena: mem.Arena
     backing := make([]u8, 1 * mem.Megabyte)
     mem.arena_init(&arena, backing)
@@ -70,4 +70,43 @@ test_decode_all_types :: proc(t: ^testing.T) {
     testing.expect_value(t, msg.nested.name, "top nested")
     testing.expect_value(t, msg.nested.flag, true)
     testing.expect_value(t, msg.status, odin.Status.ACTIVE)
+
+	decoded_into := new(odin.TestAllTypes)
+	defer free(decoded_into)
+	decoded_into_ptr, dec_into_ok := protobuf.decode_into_with_allocators(
+		odin.TestAllTypes,
+		bytes,
+		cast([^]u8)(decoded_into),
+		allocator,
+		context.temp_allocator,
+	)
+	testing.expect(t, dec_into_ok, "failed to decode_into_with_allocators TestAllTypes")
+	testing.expect(
+		t,
+		decoded_into_ptr == decoded_into,
+		"decode_into_with_allocators should return destination pointer",
+	)
+
+	free_all(context.temp_allocator)
+
+	testing.expect_value(t, decoded_into.scalars.v_double, 3.14)
+	testing.expect_value(t, decoded_into.scalars.v_string, "hello world")
+
+	testing.expect(t, len(decoded_into.scalars.v_bytes) == 4, "decoded_into v_bytes len")
+	if len(decoded_into.scalars.v_bytes) == 4 {
+		testing.expect_value(t, decoded_into.scalars.v_bytes[0], 1)
+		testing.expect_value(t, decoded_into.scalars.v_bytes[3], 4)
+	}
+
+	testing.expect(t, len(decoded_into.repeateds.r_int32) == 5, "decoded_into r_int32 len")
+	if len(decoded_into.repeateds.r_int32) == 5 {
+		testing.expect_value(t, decoded_into.repeateds.r_int32[0], 1)
+		testing.expect_value(t, decoded_into.repeateds.r_int32[4], 5)
+	}
+
+	testing.expect_value(t, decoded_into.maps.m_string_string["key1"], "value1")
+	testing.expect_value(t, decoded_into.maps.m_uint32_enum[1], odin.Status.DELETED)
+
+	testing.expect_value(t, decoded_into.nested.name, "top nested")
+	testing.expect_value(t, decoded_into.status, odin.Status.ACTIVE)
 }
