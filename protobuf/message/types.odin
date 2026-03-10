@@ -122,12 +122,12 @@ struct_field_info :: proc(
 
 		case runtime.Type_Info_Map:
 			field_info.type = Field_Type_Map {
-				key =  {
+				key = {
 					proto_id = 1,
 					proto_type = field_tag_lookup_type(field_rtti, "key_type") or_return,
 					type = {type = type_variant.key.id},
 				},
-				value =  {
+				value = {
 					proto_id = 2,
 					proto_type = field_tag_lookup_type(field_rtti, "value_type") or_return,
 					type = {type = type_variant.value.id},
@@ -159,9 +159,9 @@ is_packed :: proc(field_info: Field_Info) -> bool {
 
 @(private = "package")
 struct_field_count :: proc(message: any) -> (count: int, ok: bool) {
-    ti := runtime.type_info_base(type_info_of(message.id))
-    s := ti.variant.(runtime.Type_Info_Struct) or_return
-    return int(s.field_count), true
+	ti := runtime.type_info_base(type_info_of(message.id))
+	s := ti.variant.(runtime.Type_Info_Struct) or_return
+	return int(s.field_count), true
 }
 
 @(private = "package")
@@ -187,11 +187,7 @@ new_repeated :: proc(
 	bool,
 ) {
 	size := slice_info.elem_size * count
-	ptr, alloc_error := runtime.mem_alloc_bytes(
-		size,
-		slice_info.elem_align,
-		allocator,
-	)
+	ptr, alloc_error := runtime.mem_alloc_bytes(size, slice_info.elem_align, allocator)
 
 	if alloc_error == .None {
 		runtime.mem_zero(raw_data(ptr), size)

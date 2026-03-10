@@ -51,7 +51,10 @@ decode_tag :: proc(buffer: []u8, index: ^int) -> (tag: Tag, ok: bool) {
 		return tag, false
 	}
 	if tag.field_number >= 19000 && tag.field_number <= 19999 {
-		fmt.eprintf("Failed to decode tag: field number %v is in reserved range\n", tag.field_number)
+		fmt.eprintf(
+			"Failed to decode tag: field number %v is in reserved range\n",
+			tag.field_number,
+		)
 		return tag, false
 	}
 
@@ -83,9 +86,9 @@ decode_value :: proc(buffer: []u8, type: Type, index: ^int) -> (value: Value, ok
 			ok = true
 		case .SGROUP, .EGROUP:
 			fmt.eprintf("%v field type is deprecated\n", type)
-        case:
-            fmt.eprintf("can't decode value with unknown type %d\n", type)
-            return value, false
+		case:
+			fmt.eprintf("can't decode value with unknown type %d\n", type)
+			return value, false
 	}
 
 	return value, ok
@@ -121,10 +124,7 @@ decode :: proc(buffer: []u8) -> (message: Message, ok: bool) {
 		value := decode_value(buffer, tag.type, &index) or_return
 
 		if tag.field_number not_in value_map {
-			value_map[tag.field_number] = make(
-				[dynamic]Value,
-				allocator = context.allocator,
-			)
+			value_map[tag.field_number] = make([dynamic]Value, allocator = context.allocator)
 
 			message.fields[tag.field_number] = {
 				tag = tag,

@@ -8,8 +8,8 @@ import "core:fmt"
 main :: proc() {
 	arr_num_data := [?]i32{4, 3}
 	arr_text_data := [?]string{"Lord", "Hippo"}
-	arr_inner_data := [?]examples.Inner_Message{
-		{number = 9.8, text = "foo"}, 
+	arr_inner_data := [?]examples.Inner_Message {
+		{number = 9.8, text = "foo"},
 		{number = 11.11, text = "bar"},
 	}
 
@@ -31,7 +31,8 @@ main :: proc() {
 
 	if encoded_buffer, encode_ok := protobuf.encode(message); encode_ok {
 		fmt.printf("Encoded message: %x\n", encoded_buffer)
-		if decoded_message, ok := protobuf.decode(examples.Example_Message, encoded_buffer); ok {
+		if decoded_message, ok := protobuf.decode(examples.Example_Message, encoded_buffer);
+		   ok {
 			fmt.printf("Decoded message: %#v\n", decoded_message)
 		} else {
 			fmt.eprintf("Failed to decode message\n")

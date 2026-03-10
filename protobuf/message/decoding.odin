@@ -203,18 +203,17 @@ decode_field_repeated :: proc(
 	}
 
 	slice_info := field_info.type.(Field_Type_Repeated)
-
 	slice_data := field_info.data.(Field_Data_Repeated)
-	
+
 	old_len := slice_data^.len
 	new_len := old_len + len(values)
-	
+
 	new_slice := new_repeated(slice_info, new_len, decode_ctx.result_allocator) or_return
-	
+
 	if old_len > 0 {
 		runtime.mem_copy(new_slice.data, slice_data^.data, old_len * slice_info.elem_size)
 	}
-	
+
 	slice_data^ = new_slice
 
 	for value, value_idx in values {

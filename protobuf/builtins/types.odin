@@ -3,7 +3,7 @@ package protobuf_builtins
 import "../wire"
 
 // [---wire_type---]     ------ builtin_type ----->      [-----final_odin_type----]
-// the builtin_type is important for encoding and decoding, as for example wire_type of VARINT 
+// the builtin_type is important for encoding and decoding, as for example wire_type of VARINT
 // can be decoded to signed integers in multiple ways: 2's complement (intN) vs zig-zag (sintN)
 
 // Values correspond to FieldDescriptorProto.Type entries

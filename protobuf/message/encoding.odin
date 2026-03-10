@@ -9,64 +9,70 @@ encode :: proc(message: any) -> (buffer: []u8, ok: bool) {
 	return encode_with_allocator(message, context.allocator)
 }
 
-encode_with_allocator :: proc(message: any, allocator: runtime.Allocator) -> (buffer: []u8, ok: bool) {
+encode_with_allocator :: proc(
+	message: any,
+	allocator: runtime.Allocator,
+) -> (
+	buffer: []u8,
+	ok: bool,
+) {
 	context.allocator = allocator
 
 	wire_message: wire.Message = {
 		fields = make_map(map[u32]wire.Field, allocator = context.allocator),
 	}
 
-    field_count := struct_field_count(message) or_return
+	field_count := struct_field_count(message) or_return
 
-    for field_idx in 0 ..< field_count {
-        field_info := struct_field_info(message, field_idx) or_return
-        wire_field: wire.Field
+	for field_idx in 0 ..< field_count {
+		field_info := struct_field_info(message, field_idx) or_return
+		wire_field: wire.Field
 
-        switch _ in field_info.type {
-        case Field_Type_Scalar:
-            wire_field = encode_field_scalar(field_info) or_return
-        case Field_Type_Repeated:
-            wire_field = encode_field_repeated(field_info) or_return
-        case Field_Type_Map:
-            wire_field = encode_field_map(field_info) or_return
-        }
+		switch _ in field_info.type {
+			case Field_Type_Scalar:
+				wire_field = encode_field_scalar(field_info) or_return
+			case Field_Type_Repeated:
+				wire_field = encode_field_repeated(field_info) or_return
+			case Field_Type_Map:
+				wire_field = encode_field_map(field_info) or_return
+		}
 
-        if check_is_empty(wire_field) {
-            delete_key(&wire_message.fields, wire_field.tag.field_number)
-            continue
-        }
+		if check_is_empty(wire_field) {
+			delete_key(&wire_message.fields, wire_field.tag.field_number)
+			continue
+		}
 
 		wire_message.fields[wire_field.tag.field_number] = wire_field
 	}
 
-    return wire.encode(wire_message)
+	return wire.encode(wire_message)
 }
 
 @(private = "file")
 check_is_empty :: proc(f: wire.Field) -> bool {
-    if len(f.values) == 0 {
-        return true
-    }
+	if len(f.values) == 0 {
+		return true
+	}
 
-    // groups not supported
-    #partial switch f.tag.type {
-    case wire.Type.I64:
-        return f.values[0].(wire.Value_I64) == 0
-    case wire.Type.LEN:
-        for v in f.values {
-            if len(v.(wire.Value_LEN)) > 0 {
-                return false
-            }
-        }
+	// groups not supported
+	#partial switch f.tag.type {
+		case wire.Type.I64:
+			return f.values[0].(wire.Value_I64) == 0
+		case wire.Type.LEN:
+			for v in f.values {
+				if len(v.(wire.Value_LEN)) > 0 {
+					return false
+				}
+			}
 
-        return true
-    case wire.Type.I32:
-        return f.values[0].(wire.Value_I32) == 0
-    case wire.Type.VARINT:
-        return f.values[0].(wire.Value_VARINT) == 0
-    }
+			return true
+		case wire.Type.I32:
+			return f.values[0].(wire.Value_I32) == 0
+		case wire.Type.VARINT:
+			return f.values[0].(wire.Value_VARINT) == 0
+	}
 
-    return false
+	return false
 }
 
 @(private = "file")
@@ -78,7 +84,7 @@ encode_field_scalar :: proc(field_info: Field_Info) -> (field: wire.Field, ok: b
 
 	field.values = make_slice([]wire.Value, 1, context.allocator)
 	field.values[0] = encode_field_value(
-		 {
+		{
 			data = rawptr(field_info.data.(Field_Data_Scalar)),
 			id = field_info.type.(Field_Type_Scalar).type,
 		},
@@ -257,3 +263,4 @@ encode_field_value :: proc(
 
 	return wire_value, true
 }
+
