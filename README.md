@@ -60,6 +60,28 @@ if message, ok := protobuf.decode_with_allocator(proto.SearchRequest, buffer, co
 } else {
 	// error
 }
+
+// NEW: Split ownership decoder.
+// - result_allocator owns persistent data for `dest`.
+// - scratch_allocator is used for temporary allocations during decode only.
+decoded_into := new(proto.SearchRequest)
+defer free(decoded_into)
+
+msg, ok := protobuf.decode_into_with_allocators(
+	proto.ExampleMessage,
+	buffer,
+	cast([^]u8)(decoded_into),
+	context.allocator, // result allocator
+    context.temp_allocator, // scratch allocator
+)
+if !ok {
+    // error
+	return
+}
+
+free_all(context.temp_allocator)
+
+// do stuff with msg here
 ```
 
 ## Missing features
