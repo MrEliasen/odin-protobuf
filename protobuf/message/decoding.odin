@@ -12,7 +12,9 @@ decode :: proc($T: typeid, buffer: []u8) -> (message: ^T, ok: bool) {
 }
 
 decode_with_allocator :: proc($T: typeid, buffer: []u8, allocator: runtime.Allocator) -> (message: ^T, ok: bool) {
+	prev_allocator := context.allocator
 	context.allocator = allocator
+	defer context.allocator = prev_allocator
 
     msg, success := new_scalar(typeid_of(T))
     if !success {
