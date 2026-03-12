@@ -1,5 +1,6 @@
 package protobuf_wire
 
+import "core:encoding/endian"
 import "core:encoding/varint"
 import "core:fmt"
 import "core:math/bits"
@@ -31,11 +32,28 @@ decode_fixed :: proc(
 		return 0, false
 	}
 
-	// TODO: handle endianness
-	value := (^T)(&buffer[index^])^
-	index^ += size_of(T)
+	bytes := buffer[index^:index^ + size_of(T)]
+	when T == Value_I32 {
+		raw, ok := endian.get_u32(bytes, .Little)
+		if !ok {
+			fmt.eprintf("Failed to decode fixed32: %+v\n", ok)
+			return 0, false
+		}
 
-	return value, true
+		index^ += size_of(T)
+		return transmute(T)raw, true
+	} else when T == Value_I64 {
+		raw, ok := endian.get_u64(bytes, .Little)
+		if !ok {
+			fmt.eprintf("Failed to decode fixed64: %+v\n", ok)
+			return 0, false
+		}
+
+		index^ += size_of(T)
+		return transmute(T)raw, true
+	}
+
+	return 0, false
 }
 
 @(private = "file")
