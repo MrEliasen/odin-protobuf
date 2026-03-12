@@ -1,5 +1,6 @@
 package protobuf_wire
 
+import "core:encoding/endian"
 import "core:encoding/varint"
 import "core:fmt"
 import "core:math/bits"
@@ -24,14 +25,27 @@ encode_varint :: proc(value: $T, buffer: ^[dynamic]u8) -> bool {
 }
 
 @(private = "file")
-encode_fixed :: proc(value: $T, buffer: ^[dynamic]u8) -> bool {
-	if error := non_zero_resize(buffer, len(buffer) + size_of(T)); error == .None {
-		value_ref: ^T = transmute(^T)&buffer[len(buffer) - size_of(T)]
-		value_ref^ = value
-		return true
-	} else {
+encode_fixed :: proc(
+	value: $T,
+	buffer: ^[dynamic]u8,
+) -> bool where T == Value_I32 ||
+	T == Value_I64 {
+	if error := non_zero_resize(buffer, len(buffer) + size_of(T)); error != .None {
 		return false
 	}
+
+	start := len(buffer) - size_of(T)
+	dst := buffer[start:len(buffer)]
+
+	when T == Value_I32 {
+		raw := transmute(u32)value
+		return endian.put_u32(dst, .Little, raw)
+	} else when T == Value_I64 {
+		raw := transmute(u64)value
+		return endian.put_u64(dst, .Little, raw)
+	}
+
+	return false
 }
 
 @(private = "file")
