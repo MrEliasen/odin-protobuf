@@ -63,5 +63,9 @@ main :: proc() {
         return
     }
 
-    os.write_entire_file("payload_odin.bin", bytes)
+	err := os.write_entire_file("payload_odin.bin", bytes)
+	if err != os.ERROR_NONE {
+		fmt.eprintf("Failed to write payload_odin.bin\n")
+		return
+	}
 }

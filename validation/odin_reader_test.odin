@@ -9,17 +9,20 @@ import "core:testing"
 
 @(test)
 test_decode_all_types :: proc(t: ^testing.T) {
-    bytes, ok := os.read_entire_file_from_filename("payload.bin")
-    if !ok {
-        testing.fail_now(t, "failed to read payload.bin")
-    }
-    defer delete(bytes)
-    
-    arena: mem.Arena
-    backing := make([]u8, 1 * mem.Megabyte)
-    mem.arena_init(&arena, backing)
-    defer delete(backing)
-    allocator := mem.arena_allocator(&arena)
+	file_allocator := context.allocator
+	bytes, _ := os.read_entire_file_from_path("payload.bin", file_allocator)
+	if len(bytes) == 0 {
+		testing.fail_now(t, "failed to read payload.bin")
+	}
+	defer delete(bytes, file_allocator)
+
+	arena: mem.Arena
+	backing := make([]u8, 1 * mem.Megabyte)
+	mem.arena_init(&arena, backing)
+	defer delete(backing)
+	allocator := mem.arena_allocator(&arena)
+	}
+	defer delete(bytes, file_allocator)
 
     msg, dec_ok := protobuf.decode_with_allocator(odin.TestAllTypes, bytes, allocator)
     testing.expect(t, dec_ok, "failed to decode TestAllTypes")
