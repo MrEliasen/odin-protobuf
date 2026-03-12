@@ -16,7 +16,9 @@ encode_with_allocator :: proc(
 	buffer: []u8,
 	ok: bool,
 ) {
+	prev_allocator := context.allocator
 	context.allocator = allocator
+	defer context.allocator = prev_allocator
 
 	wire_message: wire.Message = {
 		fields = make_map(map[u32]wire.Field, allocator = context.allocator),
