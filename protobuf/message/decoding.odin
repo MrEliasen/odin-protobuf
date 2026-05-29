@@ -4,8 +4,6 @@ import "../builtins"
 import "../wire"
 
 import "base:runtime"
-import "core:slice"
-import "core:strings"
 
 Decode_Context :: struct {
 	result_allocator:  runtime.Allocator,
@@ -142,12 +140,12 @@ decode_fill :: proc(message: any, buffer: []u8, decode_ctx: Decode_Context) -> (
 		wire_field := wire_message.fields[field_info.proto_id]
 
 		switch type_variant in field_info.type {
-			case Field_Type_Scalar:
-				decode_field_scalar(field_info, wire_field, decode_ctx) or_return
-			case Field_Type_Repeated:
-				decode_field_repeated(field_info, wire_field, decode_ctx) or_return
-			case Field_Type_Map:
-				decode_field_map(field_info, wire_field, decode_ctx) or_return
+		case Field_Type_Scalar:
+			decode_field_scalar(field_info, wire_field, decode_ctx) or_return
+		case Field_Type_Repeated:
+			decode_field_repeated(field_info, wire_field, decode_ctx) or_return
+		case Field_Type_Map:
+			decode_field_map(field_info, wire_field, decode_ctx) or_return
 		}
 	}
 
@@ -313,77 +311,59 @@ decode_fill_field :: proc(
 	decode_ctx: Decode_Context,
 ) -> bool {
 	switch type {
-		// VARINT-backing
-		case .t_int32:
-			(transmute(^i32)field.data)^ = builtins.decode_int32(value.(wire.Value_VARINT))
-		case .t_int64:
-			(transmute(^i64)field.data)^ = builtins.decode_int64(value.(wire.Value_VARINT))
-		case .t_uint32:
-			(transmute(^u32)field.data)^ = builtins.decode_uint32(value.(wire.Value_VARINT))
-		case .t_uint64:
-			(transmute(^u64)field.data)^ = builtins.decode_uint64(value.(wire.Value_VARINT))
-		case .t_bool:
-			(transmute(^bool)field.data)^ = builtins.decode_bool(value.(wire.Value_VARINT))
-		case .t_enum:
-			(transmute(^builtins.Enum_Wire_Type)field.data)^ = builtins.decode_enum(
-				value.(wire.Value_VARINT),
-			)
-		case .t_sint32:
-			(transmute(^i32)field.data)^ = builtins.decode_sint32(value.(wire.Value_VARINT))
-		case .t_sint64:
-			(transmute(^i64)field.data)^ = builtins.decode_sint64(value.(wire.Value_VARINT))
-		// I32-backing
-		case .t_sfixed32:
-			(transmute(^i32)field.data)^ = builtins.decode_sfixed32(value.(wire.Value_I32))
-		case .t_fixed32:
-			(transmute(^u32)field.data)^ = builtins.decode_fixed32(value.(wire.Value_I32))
-		case .t_float:
-			(transmute(^f32)field.data)^ = builtins.decode_float(value.(wire.Value_I32))
-		// I64-backing
-		case .t_sfixed64:
-			(transmute(^i64)field.data)^ = builtins.decode_sfixed64(value.(wire.Value_I64))
-		case .t_fixed64:
-			(transmute(^u64)field.data)^ = builtins.decode_fixed64(value.(wire.Value_I64))
-		case .t_double:
-			(transmute(^f64)field.data)^ = builtins.decode_double(value.(wire.Value_I64))
-		// LEN-backing
-		case .t_message:
-			field_bytes := builtins.decode_bytes(value.(wire.Value_LEN))
-			decode_fill(field, field_bytes, decode_ctx) or_return
-		case .t_string:
-			existing := (transmute(^string)field.data)^
-			decoded := builtins.decode_string(value.(wire.Value_LEN))
-			decoded_owned := clone_string_to_allocator(
-				decoded,
-				decode_ctx.result_allocator,
-			) or_return
-
-			if len(existing) == 0 {
-				(transmute(^string)field.data)^ = decoded_owned
-			} else {
-				(transmute(^string)field.data)^ = strings.concatenate(
-					[]string{existing, decoded_owned},
-					decode_ctx.result_allocator,
-				)
-			}
-		case .t_bytes:
-			existing := (transmute(^([]u8))field.data)^
-			decoded := builtins.decode_bytes(value.(wire.Value_LEN))
-			decoded_owned := clone_bytes_to_allocator(
-				decoded,
-				decode_ctx.result_allocator,
-			) or_return
-
-			if len(existing) == 0 {
-				(transmute(^([]u8))field.data)^ = decoded_owned
-			} else {
-				(transmute(^([]u8))field.data)^ = slice.concatenate(
-					[][]u8{existing, decoded_owned},
-					decode_ctx.result_allocator,
-				)
-			}
-		case .t_group:
-			unimplemented()
+	// VARINT-backing
+	case .t_int32:
+		(cast(^i32)field.data)^ = builtins.decode_int32(value.(wire.Value_VARINT))
+	case .t_int64:
+		(cast(^i64)field.data)^ = builtins.decode_int64(value.(wire.Value_VARINT))
+	case .t_uint32:
+		(cast(^u32)field.data)^ = builtins.decode_uint32(value.(wire.Value_VARINT))
+	case .t_uint64:
+		(cast(^u64)field.data)^ = builtins.decode_uint64(value.(wire.Value_VARINT))
+	case .t_bool:
+		(cast(^bool)field.data)^ = builtins.decode_bool(value.(wire.Value_VARINT))
+	case .t_enum:
+		(cast(^builtins.Enum_Wire_Type)field.data)^ = builtins.decode_enum(
+			value.(wire.Value_VARINT),
+		)
+	case .t_sint32:
+		(cast(^i32)field.data)^ = builtins.decode_sint32(value.(wire.Value_VARINT))
+	case .t_sint64:
+		(cast(^i64)field.data)^ = builtins.decode_sint64(value.(wire.Value_VARINT))
+	// I32-backing
+	case .t_sfixed32:
+		(cast(^i32)field.data)^ = builtins.decode_sfixed32(value.(wire.Value_I32))
+	case .t_fixed32:
+		(cast(^u32)field.data)^ = builtins.decode_fixed32(value.(wire.Value_I32))
+	case .t_float:
+		(cast(^f32)field.data)^ = builtins.decode_float(value.(wire.Value_I32))
+	// I64-backing
+	case .t_sfixed64:
+		(cast(^i64)field.data)^ = builtins.decode_sfixed64(value.(wire.Value_I64))
+	case .t_fixed64:
+		(cast(^u64)field.data)^ = builtins.decode_fixed64(value.(wire.Value_I64))
+	case .t_double:
+		(cast(^f64)field.data)^ = builtins.decode_double(value.(wire.Value_I64))
+	// LEN-backing
+	case .t_message:
+		field_bytes := builtins.decode_bytes(value.(wire.Value_LEN))
+		decode_fill(field, field_bytes, decode_ctx) or_return
+	case .t_string:
+		// Singular string/bytes are last-one-wins, not concatenated. Clone
+		// into the result allocator so the value outlives the scratch buffer.
+		decoded := builtins.decode_string(value.(wire.Value_LEN))
+		(cast(^string)field.data)^ = clone_string_to_allocator(
+			decoded,
+			decode_ctx.result_allocator,
+		) or_return
+	case .t_bytes:
+		decoded := builtins.decode_bytes(value.(wire.Value_LEN))
+		(cast(^([]u8))field.data)^ = clone_bytes_to_allocator(
+			decoded,
+			decode_ctx.result_allocator,
+		) or_return
+	case .t_group:
+		unimplemented()
 	}
 
 	return true

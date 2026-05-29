@@ -82,31 +82,31 @@ decode_tag :: proc(buffer: []u8, index: ^int) -> (tag: Tag, ok: bool) {
 @(private = "file")
 decode_value :: proc(buffer: []u8, type: Type, index: ^int) -> (value: Value, ok: bool) {
 	switch type {
-		case .VARINT:
-			value = decode_varint(buffer, index) or_return
-			ok = true
-		case .I32:
-			value = decode_fixed(Value_I32, buffer, index) or_return
-			ok = true
-		case .I64:
-			value = decode_fixed(Value_I64, buffer, index) or_return
-			ok = true
-		case .LEN:
-			len_varint := decode_varint(buffer, index) or_return
-			length := int(len_varint)
-			if length < 0 || index^ + length > len(buffer) {
-				fmt.eprintf("Failed to decode LEN: out of bounds or invalid length\n")
-				return value, false
-			}
-			value = make(Value_LEN, length)
-			copy(([]u8)(value.(Value_LEN)), buffer[index^:index^ + length])
-			index^ += length
-			ok = true
-		case .SGROUP, .EGROUP:
-			fmt.eprintf("%v field type is deprecated\n", type)
-		case:
-			fmt.eprintf("can't decode value with unknown type %d\n", type)
+	case .VARINT:
+		value = decode_varint(buffer, index) or_return
+		ok = true
+	case .I32:
+		value = decode_fixed(Value_I32, buffer, index) or_return
+		ok = true
+	case .I64:
+		value = decode_fixed(Value_I64, buffer, index) or_return
+		ok = true
+	case .LEN:
+		len_varint := decode_varint(buffer, index) or_return
+		length := int(len_varint)
+		if length < 0 || index^ + length > len(buffer) {
+			fmt.eprintf("Failed to decode LEN: out of bounds or invalid length\n")
 			return value, false
+		}
+		value = make(Value_LEN, length)
+		copy(([]u8)(value.(Value_LEN)), buffer[index^:index^ + length])
+		index^ += length
+		ok = true
+	case .SGROUP, .EGROUP:
+		fmt.eprintf("%v field type is deprecated\n", type)
+	case:
+		fmt.eprintf("can't decode value with unknown type %d\n", type)
+		return value, false
 	}
 
 	return value, ok

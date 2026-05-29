@@ -60,16 +60,16 @@ encode_tag :: proc(tag: Tag, buffer: ^[dynamic]u8) -> bool {
 @(private = "file")
 encode_value :: proc(value: Value, buffer: ^[dynamic]u8) -> bool {
 	switch v in value {
-		case Value_VARINT:
-			encode_varint(v, buffer) or_return
-		case Value_I32:
-			encode_fixed(v, buffer) or_return
-		case Value_I64:
-			encode_fixed(v, buffer) or_return
-		case Value_LEN:
-			encode_varint(u32(len(v)), buffer) or_return
-			non_zero_resize(buffer, len(buffer) + len(v))
-			copy(buffer[len(buffer) - len(v):], ([]u8)(v))
+	case Value_VARINT:
+		encode_varint(v, buffer) or_return
+	case Value_I32:
+		encode_fixed(v, buffer) or_return
+	case Value_I64:
+		encode_fixed(v, buffer) or_return
+	case Value_LEN:
+		encode_varint(u32(len(v)), buffer) or_return
+		non_zero_resize(buffer, len(buffer) + len(v))
+		copy(buffer[len(buffer) - len(v):], ([]u8)(v))
 	}
 	return true
 }

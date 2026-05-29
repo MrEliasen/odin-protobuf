@@ -37,16 +37,16 @@ Enum_Wire_Type :: distinct i32
 
 wire_type :: proc(type: Type) -> wire.Type {
 	switch type {
-		case .t_int32, .t_int64, .t_uint32, .t_uint64, .t_bool, .t_enum, .t_sint32, .t_sint64:
-			return .VARINT
-		case .t_sfixed32, .t_fixed32, .t_float:
-			return .I32
-		case .t_sfixed64, .t_fixed64, .t_double:
-			return .I64
-		case .t_message, .t_string, .t_bytes:
-			return .LEN
-		case .t_group:
-			return .EGROUP
+	case .t_int32, .t_int64, .t_uint32, .t_uint64, .t_bool, .t_enum, .t_sint32, .t_sint64:
+		return .VARINT
+	case .t_sfixed32, .t_fixed32, .t_float:
+		return .I32
+	case .t_sfixed64, .t_fixed64, .t_double:
+		return .I64
+	case .t_message, .t_string, .t_bytes:
+		return .LEN
+	case .t_group:
+		return .EGROUP
 	}
 
 	return nil
