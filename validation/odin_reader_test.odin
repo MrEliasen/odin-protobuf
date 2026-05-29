@@ -21,8 +21,6 @@ test_decode_all_types :: proc(t: ^testing.T) {
 	mem.arena_init(&arena, backing)
 	defer delete(backing)
 	allocator := mem.arena_allocator(&arena)
-	}
-	defer delete(bytes, file_allocator)
 
     msg, dec_ok := protobuf.decode_with_allocator(odin.TestAllTypes, bytes, allocator)
     testing.expect(t, dec_ok, "failed to decode TestAllTypes")

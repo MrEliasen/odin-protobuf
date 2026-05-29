@@ -1,4 +1,4 @@
-.PHONY: all compile test_go test_odin test
+.PHONY: all compile test_go test_odin test_spec test
 
 all: compile test
 
@@ -22,4 +22,8 @@ test_odin: compile
 	go test -v
 	rm payload_odin.bin
 
-test: test_go test_odin
+# Self-contained wire-semantics tests; no generated bindings or Go required.
+test_spec:
+	odin test odin_spec_test.odin -file
+
+test: test_spec test_go test_odin

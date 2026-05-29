@@ -9,7 +9,7 @@ decode_int32 :: proc(value: wire.Value_VARINT) -> i32 {
 }
 
 decode_int64 :: proc(value: wire.Value_VARINT) -> i64 {
-	return transmute(i64)value
+	return cast(i64)value
 }
 
 decode_uint32 :: proc(value: wire.Value_VARINT) -> u32 {
@@ -31,12 +31,12 @@ decode_enum :: proc(value: wire.Value_VARINT) -> Enum_Wire_Type {
 
 decode_sint32 :: proc(value: wire.Value_VARINT) -> i32 {
 	value_u32 := u32(value)
-	return transmute(i32)((value_u32 >> 1) ~ u32(-i32(value_u32 & 1)))
+	return cast(i32)((value_u32 >> 1) ~ u32(-i32(value_u32 & 1)))
 }
 
 decode_sint64 :: proc(value: wire.Value_VARINT) -> i64 {
 	value_u64 := u64(value)
-	return transmute(i64)((value_u64 >> 1) ~ u64(-i64(value_u64 & 1)))
+	return cast(i64)((value_u64 >> 1) ~ u64(-i64(value_u64 & 1)))
 }
 
 // I32-backing
@@ -46,7 +46,7 @@ decode_sfixed32 :: proc(value: wire.Value_I32) -> i32 {
 }
 
 decode_fixed32 :: proc(value: wire.Value_I32) -> u32 {
-	return transmute(u32)value
+	return cast(u32)value
 }
 
 decode_float :: proc(value: wire.Value_I32) -> f32 {
@@ -60,7 +60,7 @@ decode_sfixed64 :: proc(value: wire.Value_I64) -> i64 {
 }
 
 decode_fixed64 :: proc(value: wire.Value_I64) -> u64 {
-	return transmute(u64)value
+	return cast(u64)value
 }
 
 decode_double :: proc(value: wire.Value_I64) -> f64 {

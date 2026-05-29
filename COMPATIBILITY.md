@@ -6,8 +6,8 @@ This library implements support for the protocol buffers wire format natively in
 - [x] **Varint Encoding**: Correctly handles two's-complement negative integers (`int32`, `int64`) and bools.
 - [x] **ZigZag Encoding**: Applies fast bitwise zigzag decoding and encoding for `sint32` and `sint64`.
 - [x] **Length-Delimited Bounds Safety**: Verifies boundaries when parsing strings, bytes, or packed repeated fields to prevent out-of-bounds panics on malformed wire payloads.
-- [x] **Merge & Concatenation Semantics**: 
-  - Strings and bytes are concatenated if multiple fragments are present.
+- [x] **Last-One-Wins / Merge Semantics**:
+  - Repeated occurrences of a singular scalar, `string`, or `bytes` field resolve to the last value seen (matching the reference implementation).
   - Sub-messages are merged appropriately when declared on the wire more than once.
 - [x] **Repeated Fields Additivity**: Repeated fields accumulate elements across multiple values or packed blocks in the same message payload.
 - [x] **Tag Validation**: Actively rejects and drops tags that are `0` or within the reserved range `19000-19999`.
