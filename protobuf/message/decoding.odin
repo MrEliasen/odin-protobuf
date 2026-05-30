@@ -86,9 +86,15 @@ decode_with_allocator :: proc(
 	message: ^T,
 	ok: bool,
 ) {
+	scratch_arena: runtime.Arena
+	if runtime.arena_init(&scratch_arena, 0, context.allocator) != nil {
+		return nil, false
+	}
+	defer runtime.arena_destroy(&scratch_arena)
+
 	decode_ctx := Decode_Context {
 		result_allocator  = allocator,
-		scratch_allocator = allocator,
+		scratch_allocator = runtime.arena_allocator(&scratch_arena),
 	}
 
 	msg, success := new_scalar(typeid_of(T), decode_ctx.result_allocator)
