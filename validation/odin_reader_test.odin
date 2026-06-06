@@ -74,7 +74,7 @@ test_decode_all_types :: proc(t: ^testing.T) {
 
 	decoded_into := new(odin.TestAllTypes)
 	defer free(decoded_into)
-	decoded_into_ptr, dec_into_ok := protobuf.decode_into_with_allocators(
+	dec_into_ok := protobuf.decode_into_with_allocators(
 		odin.TestAllTypes,
 		bytes,
 		cast([^]u8)(decoded_into),
@@ -82,11 +82,6 @@ test_decode_all_types :: proc(t: ^testing.T) {
 		context.temp_allocator,
 	)
 	testing.expect(t, dec_into_ok, "failed to decode_into_with_allocators TestAllTypes")
-	testing.expect(
-		t,
-		decoded_into_ptr == decoded_into,
-		"decode_into_with_allocators should return destination pointer",
-	)
 
 	free_all(context.temp_allocator)
 

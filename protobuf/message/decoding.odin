@@ -113,11 +113,10 @@ decode_into_with_allocators :: proc(
 	result_allocator: runtime.Allocator,
 	scratch_allocator: runtime.Allocator = context.temp_allocator,
 ) -> (
-	message: ^T,
 	ok: bool,
 ) {
 	if dest == nil {
-		return nil, false
+		return false
 	}
 
 	decode_ctx := Decode_Context {
@@ -133,7 +132,7 @@ decode_into_with_allocators :: proc(
 	runtime.mem_zero(msg.data, size_of(T))
 
 	filled := decode_fill(msg, buffer, decode_ctx)
-	return cast(^T)msg.data, filled
+    return filled
 }
 
 @(private = "file")

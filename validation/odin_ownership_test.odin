@@ -80,7 +80,7 @@ test_decode_into_survives_scratch_destruction :: proc(t: ^testing.T) {
 	scratch_alloc := mem.arena_allocator(&scratch_arena)
 
 	dest := new(odin.TestAllTypes, result_alloc)
-	got, dec_ok := protobuf.decode_into_with_allocators(
+	dec_ok := protobuf.decode_into_with_allocators(
 		odin.TestAllTypes,
 		bytes,
 		cast([^]u8)dest,
@@ -88,7 +88,6 @@ test_decode_into_survives_scratch_destruction :: proc(t: ^testing.T) {
 		scratch_alloc,
 	)
 	testing.expect(t, dec_ok, "decode_into failed")
-	testing.expect(t, got == dest, "decode_into must return the destination pointer")
 
 	// --- POISON: nothing the message points at may live in scratch or input ---
 	free_all(scratch_alloc)
@@ -141,7 +140,7 @@ test_decode_into_survives_scratch_destruction :: proc(t: ^testing.T) {
 // decode_into must reject a nil destination.
 @(test)
 test_decode_into_nil_dest :: proc(t: ^testing.T) {
-	_, ok := protobuf.decode_into_with_allocators(
+	ok := protobuf.decode_into_with_allocators(
 		odin.TestAllTypes,
 		[]u8{0x28, 0x01}, // status = 1
 		nil,
@@ -186,7 +185,7 @@ test_decode_with_allocator_excludes_scratch :: proc(t: ^testing.T) {
 	mem.arena_init(&a_arena, a_backing)
 	a := mem.arena_allocator(&a_arena)
 	dest_a := new(odin.TestAllTypes, a)
-	_, ok_a := protobuf.decode_into_with_allocators(
+	ok_a := protobuf.decode_into_with_allocators(
 		odin.TestAllTypes,
 		bytes,
 		cast([^]u8)dest_a,
