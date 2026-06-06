@@ -22,8 +22,10 @@ test_odin: compile
 	go test -v
 	rm payload_odin.bin
 
-# Self-contained wire-semantics tests; no generated bindings or Go required.
+# Wire-semantics + ownership tests, no Go required. The spec test needs no
+# bindings; the ownership test uses the committed generated out/odin types.
 test_spec:
 	odin test odin_spec_test.odin -file
+	odin test odin_ownership_test.odin -file
 
 test: test_spec test_go test_odin
